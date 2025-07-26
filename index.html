@@ -1,0 +1,1123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Fidget-Spinner Invasion - Ultimate Edition</title>
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+    :root {
+        --neon1: #00f5ff;
+        --neon2: #ff006e;
+        --neon3: #ff00cc;
+        --neon4: #00ff9d;
+        --neon5: #ff9d00;
+        --dark: #000;
+        --space-blue: #0a0a2e;
+    }
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: 'Orbitron', sans-serif;
+        -webkit-user-select: none;
+        user-select: none;
+    }
+    body {
+        background: var(--dark);
+        overflow: hidden;
+        height: 100vh;
+        color: #fff;
+        touch-action: none;
+    }
+    #loading {
+        position: fixed;
+        inset: 0;
+        background: radial-gradient(ellipse at center, #0a0a2e 0%, var(--dark) 100%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+    }
+    #loading h1 {
+        font-size: clamp(1.5rem, 5vw, 3rem);
+        color: var(--neon1);
+        text-shadow: 0 0 10px var(--neon1);
+        margin-bottom: 20px;
+        letter-spacing: 2px;
+    }
+    #bar {
+        width: 80%;
+        max-width: 300px;
+        height: 12px;
+        border: 1px solid var(--neon1);
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 0 10px var(--neon1);
+    }
+    #bar div {
+        height: 100%;
+        width: 0;
+        background: linear-gradient(90deg, #00f5ff, #00ff9d);
+        transition: width .3s;
+        box-shadow: 0 0 10px var(--neon1);
+    }
+    #game {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(ellipse at center, #0a0a2e 0%, var(--dark) 100%);
+        overflow: hidden;
+    }
+    #stars {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        background-image: 
+            radial-gradient(2px 2px at 20px 30px, #eee, transparent),
+            radial-gradient(1px 1px at 40px 70px, #fff, transparent),
+            radial-gradient(1.5px 1.5px at 80px 120px, #eee, transparent),
+            radial-gradient(1px 1px at 150px 90px, #fff, transparent);
+        background-size: 200px 100px;
+        animation: starMove 20s linear infinite;
+    }
+    @keyframes starMove {
+        from { transform: translateY(0) }
+        to { transform: translateY(100px) }
+    }
+    .player {
+        position: absolute;
+        bottom: 2%;
+        left: 50%;
+        transform: translateX(-50%);
+        width: clamp(120px, 50vw, 140px);
+        height: clamp(120px, 30vw, 100px);
+        background: url('https://static.wikia.nocookie.net/galaxy-attack-alien-shooter/images/d/db/Cyber_no_blade.png/revision/latest?cb=20241206231013') center/contain no-repeat;
+        filter: drop-shadow(0 -10px var(--neon1));
+        z-index: 10;
+        transition: filter 0.3s;
+        will-change: transform;
+    }
+    .player.firing {
+        filter: drop-shadow(0 0 100px var(--neon1)) 
+                drop-shadow(0 0 50px var(--neon1)) 
+                drop-shadow(0 0 60px var(--neon1));
+    }
+    .enemy {
+        position: absolute;
+        width: clamp(35px, 8vw, 55px);
+        height: clamp(35px, 8vw, 55px);
+        background: url('https://imgcdn.stablediffusionweb.com/2024/4/1/717d4984-ace6-4e3c-84dd-7098a721fcc4.jpg') center/contain no-repeat;
+        animation: spin 1.5s linear infinite, enemyRedGlow 1.2s infinite alternate;
+        z-index: 5;
+        box-shadow: 0 0 18px 4px #86868d1e;
+        will-change: transform;
+    }
+    @keyframes spin {
+        100% { transform: rotate(360deg); }
+    }
+    @keyframes enemyRedGlow {
+        0% { filter: drop-shadow(0 0 0px #ff003c) brightness(1); }
+        100% { filter: drop-shadow(0 0 16px #ff003c) brightness(1.2); }
+    }
+    .bullet, .laser, .ebullet {
+        position: absolute;
+        border-radius: 2px;
+        z-index: 3;
+    }
+    .bullet {
+        width: 10px;
+        height: 20px;
+        background: linear-gradient(to top, #fca21d, var(--neon1));
+        box-shadow: 0 0 10px var(--neon1);
+        animation: bulletGlow 0.7s infinite alternate;
+        will-change: transform;
+    }
+    @keyframes bulletGlow {
+        0% { box-shadow: 0 0 10px var(--neon1), 0 0 0px #9219b1; }
+        100% { box-shadow: 0 0 20px #fff, 0 0 10px var(--neon1); }
+    }
+    .laser {
+        width: 10px;
+        height: 50px;
+        background: linear-gradient(to top, #fff, var(--neon2));
+        box-shadow: 0 0 20px var(--neon2);
+    }
+    .ebullet {
+        width: 6px;
+        height: 16px;
+        background: linear-gradient(to bottom, var(--neon3), #f00);
+        box-shadow: 0 0 10px #f00;
+        border-radius: 50%;
+    }
+    .explosion {
+        position: absolute;
+        width: clamp(40px, 10vw, 80px);
+        height: clamp(40px, 10vw, 80px);
+        background: radial-gradient(circle, var(--neon2), #ff4500, transparent);
+        border-radius: 50%;
+        animation: boom .4s forwards;
+        z-index: 4;
+    }
+    @keyframes boom {
+        0% { transform: scale(0); opacity: 1 }
+        100% { transform: scale(2); opacity: 0 }
+    }
+    .big-laser {
+        position: absolute;
+        bottom: 0;
+        width: 300px;
+        height: 0;
+        background: linear-gradient(to top, 
+            rgba(255, 255, 255, 1) 0%,
+            rgba(255, 0, 110, 0.9) 30%,
+            rgba(255, 0, 255, 0.3) 100%
+        );
+        border-radius: 50%;
+        box-shadow: 0 0 100px var(--neon2), 
+                    0 0 200px var(--neon3),
+                    0 0 300px var(--neon3);
+        opacity: 0.9;
+        z-index: 15;
+        transform-origin: bottom center;
+        animation: laserBeam 0.5s forwards;
+    }
+    @keyframes laserBeam {
+        0% { height: 0; opacity: 0; }
+        50% { height: 100%; opacity: 0.9; }
+        100% { height: 100%; opacity: 0; }
+    }
+    .shockwave {
+        position: absolute;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(255, 0, 110, 0.8), transparent 70%);
+        animation: shockwave 1s forwards;
+    }
+    @keyframes shockwave {
+        0% { transform: scale(0); opacity: 1; }
+        100% { transform: scale(5); opacity: 0; }
+    }
+    .particle {
+        position: absolute;
+        background: var(--neon1);
+        border-radius: 50%;
+        pointer-events: none;
+        animation: fadeOut 1s forwards;
+    }
+    @keyframes fadeOut {
+        to { opacity: 0; transform: translateY(10px) }
+    }
+    #ui {
+        position: absolute;
+        top: 15px;
+        left: 10px;
+        right: 10px;
+        display: flex;
+        justify-content: space-between;
+        font-size: clamp(.8rem, 3.5vw, 1.1rem);
+        z-index: 20;
+    }
+    #ui > div {
+        background: rgba(0, 245, 255, 0.15);
+        border: 1px solid var(--neon1);
+        padding: 8px 15px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 245, 255, 0.5);
+        -webkit-backdrop-filter: blur(5px);
+        backdrop-filter: blur(5px);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    #ui span {
+        font-weight: bold;
+        font-size: clamp(1rem, 4vw, 1.4rem);
+        color: var(--neon1);
+        margin-top: 3px;
+        text-shadow: 0 0 8px var(--neon1);
+    }
+    #controls {
+        position: absolute;
+        bottom: 25px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 15px;
+        z-index: 20;
+    }
+    #controls button {
+        padding: clamp(10px, 3vw, 20px) clamp(20px, 6vw, 40px);
+        border: 2px solid var(--neon2);
+        background: rgba(255, 0, 110, 0.25);
+        color: var(--neon2);
+        border-radius: 35px;
+        font-size: clamp(0.9rem, 4vw, 1.2rem);
+        font-weight: bold;
+        cursor: pointer;
+        letter-spacing: 1px;
+        text-shadow: 0 0 5px rgba(255, 0, 110, 0.7);
+        box-shadow: 0 0 15px rgba(255, 0, 110, 0.3);
+        transition: all 0.2s;
+        outline: none;
+        min-width: 120px;
+    }
+    #controls button:active {
+        transform: scale(0.95);
+        background: rgba(255, 0, 110, 0.4);
+    }
+    #fireBtn {
+        background: rgba(0, 245, 255, 0.25);
+        border: 2px solid var(--neon1);
+        color: var(--neon1);
+        box-shadow: 0 0 15px rgba(0, 245, 255, 0.3);
+    }
+    #laserBtn {
+        background: var(--neon2);
+        color: #000;
+        text-shadow: none;
+        box-shadow: 0 0 20px var(--neon2);
+    }
+    #laserBtn.ready {
+        background: var(--neon4);
+        color: #000;
+        box-shadow: 0 0 30px var(--neon4);
+        animation: pulse 1s infinite;
+    }
+    #bombBtn {
+        background: rgba(255, 157, 0, 0.25);
+        border: 2px solid var(--neon5);
+        color: var(--neon5);
+        box-shadow: 0 0 15px rgba(255, 157, 0, 0.3);
+    }
+    #bombBtn.ready {
+        background: var(--neon5);
+        color: #000;
+        box-shadow: 0 0 30px var(--neon5);
+        animation: pulseBomb 1s infinite;
+    }
+    @keyframes pulse {
+        0% { box-shadow: 0 0 10px var(--neon4); }
+        50% { box-shadow: 0 0 30px var(--neon4); }
+        100% { box-shadow: 0 0 10px var(--neon4); }
+    }
+    @keyframes pulseBomb {
+        0% { box-shadow: 0 0 10px var(--neon5); }
+        50% { box-shadow: 0 0 30px var(--neon5); }
+        100% { box-shadow: 0 0 10px var(--neon5); }
+    }
+    #gameOver {
+        position: absolute;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.85);
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 100;
+    }
+    #gameOver h2 {
+        font-size: clamp(2rem, 8vw, 4rem);
+        color: var(--neon2);
+        text-shadow: 0 0 20px var(--neon2);
+        margin-bottom: 20px;
+        letter-spacing: 3px;
+    }
+    #gameOver p {
+        font-size: clamp(1.2rem, 4vw, 1.8rem);
+        margin-bottom: 30px;
+        text-align: center;
+    }
+    #restartBtn {
+        padding: 15px 40px;
+        background: var(--neon1);
+        color: #000;
+        border: none;
+        border-radius: 50px;
+        font-size: clamp(1.2rem, 4vw, 1.5rem);
+        font-weight: bold;
+        cursor: pointer;
+        letter-spacing: 1px;
+        box-shadow: 0 0 20px var(--neon1);
+        transition: all 0.3s;
+    }
+    #restartBtn:hover {
+        background: var(--neon4);
+        transform: scale(1.05);
+    }
+    #instructions {
+        position: absolute;
+        bottom: 100px;
+        left: 0;
+        right: 0;
+        text-align: center;
+        font-size: clamp(0.7rem, 2.5vw, 1rem);
+        color: var(--neon1);
+        opacity: 0.7;
+        padding: 0 20px;
+    }
+    #difficultyIndicator {
+        position: absolute;
+        top: 80px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0, 245, 255, 0.15);
+        border: 1px solid var(--neon1);
+        padding: 8px 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 245, 255, 0.5);
+        -webkit-backdrop-filter: blur(5px);
+        backdrop-filter: blur(5px);
+        font-size: clamp(0.8rem, 3.5vw, 1.1rem);
+        z-index: 20;
+        text-align: center;
+    }
+    #bombEffect {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(circle, rgba(255, 157, 0, 0.5), transparent 70%);
+        z-index: 12;
+        display: none;
+        pointer-events: none;
+    }
+    .bomb-explosion {
+        position: absolute;
+        width: 100px;
+        height: 100px;
+        background: radial-gradient(circle, var(--neon5), transparent 70%);
+        border-radius: 50%;
+        animation: bombBoom 0.8s forwards;
+        z-index: 11;
+    }
+    @keyframes bombBoom {
+        0% { transform: scale(0.1); opacity: 1; }
+        100% { transform: scale(10); opacity: 0; }
+    }
+    .bomb-pulse {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(circle, rgba(255, 157, 0, 0.3), transparent 70%);
+        border-radius: 50%;
+        animation: bombPulse 0.5s forwards;
+        z-index: 11;
+    }
+    @keyframes bombPulse {
+        0% { transform: scale(0.1); opacity: 0.8; }
+        100% { transform: scale(5); opacity: 0; }
+    }
+    #bombTimer {
+        position: absolute;
+        bottom: 170px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(255, 157, 0, 0.15);
+        border: 1px solid var(--neon5);
+        padding: 8px 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(255, 157, 0, 0.5);
+        -webkit-backdrop-filter: blur(5px);
+        backdrop-filter: blur(5px);
+        font-size: clamp(0.8rem, 3.5vw, 1.1rem);
+        z-index: 20;
+        text-align: center;
+        display: none;
+    }
+    #playPauseBtn {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: rgba(0, 245, 255, 0.15);
+        border: 1px solid var(--neon1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--neon1);
+        font-size: 20px;
+        cursor: pointer;
+        z-index: 30;
+        box-shadow: 0 0 10px rgba(0, 245, 255, 0.5);
+        transition: all 0.3s;
+    }
+    #playPauseBtn:hover {
+        background: rgba(0, 245, 255, 0.25);
+        transform: scale(1.1);
+    }
+    .pause-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 90;
+        display: none;
+    }
+    .pause-overlay h2 {
+        font-size: clamp(2rem, 8vw, 4rem);
+        color: var(--neon1);
+        text-shadow: 0 0 20px var(--neon1);
+        margin-bottom: 20px;
+        letter-spacing: 3px;
+    }
+    .laser-beam {
+        position: absolute;
+        width: 10px;
+        height: 0;
+        background: linear-gradient(to top, 
+            rgba(255, 255, 255, 1) 0%,
+            rgba(255, 0, 110, 0.9) 30%,
+            rgba(255, 0, 255, 0.3) 100%
+        );
+        border-radius: 2px;
+        box-shadow: 0 0 20px var(--neon2), 
+                    0 0 40px var(--neon3),
+                    0 0 60px var(--neon3);
+        z-index: 15;
+        transform-origin: bottom center;
+        animation: laserBeamSmall 0.3s forwards;
+    }
+    @keyframes laserBeamSmall {
+        0% { height: 0; opacity: 0; }
+        50% { height: 100%; opacity: 0.9; }
+        100% { height: 100%; opacity: 0; }
+    }
+    #miniPauseBtn {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: rgba(0,245,255,0.18);
+        border: 2px solid var(--neon1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--neon1);
+        font-size: 22px;
+        cursor: pointer;
+        z-index: 1001;
+        box-shadow: 0 0 10px var(--neon1);
+        transition: all 0.2s;
+    }
+    #miniPauseBtn:hover {
+        background: rgba(0,245,255,0.32);
+        transform: scale(1.08);
+    }
+    .enemy.fierce {
+        box-shadow: 0 0 40px 16px #ff003c, 0 0 60px 20px var(--neon3);
+        filter: brightness(1.3) drop-shadow(0 0 30px #ff003c);
+        border-radius: 50%;
+        animation-timing-function: cubic-bezier(0.4, 0.2, 0.6, 1.2);
+    }
+</style>
+</head>
+<body>
+
+<!-- HOME PAGE OVERLAY -->
+<div id="homePage" style="position:fixed;inset:0;z-index:2000;background:radial-gradient(ellipse at center,#0a0a2e 0%,#000 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;">
+    <h1 style="font-size:clamp(2rem,7vw,4rem);color:var(--neon1);text-shadow:0 0 20px var(--neon1);margin-bottom:30px;letter-spacing:3px;">Fidget-Spinner Invasion</h1>
+    <button id="startGameBtn" style="padding:20px 60px;background:var(--neon2);color:#000;border:none;border-radius:50px;font-size:clamp(1.5rem,5vw,2rem);font-weight:bold;cursor:pointer;letter-spacing:2px;box-shadow:0 0 30px var(--neon2);transition:all 0.3s;">START</button>
+    <p style="margin-top:40px;color:var(--neon1);opacity:0.7;font-size:clamp(1rem,3vw,1.3rem);text-align:center;max-width:90vw;">Defend the galaxy! Click START to play.</p>
+</div>
+
+<!-- LOADING -->
+<div id="loading">
+    <h1>PREPARING SPACE DEFENSE</h1>
+    <div id="bar"><div></div></div>
+</div>
+
+<!-- GAME -->
+<div id="game" style="display:none">
+    <div id="stars"></div>
+    <div id="bombEffect"></div>
+    <div class="player" id="player"></div>
+    <div id="difficultyIndicator">Always be happy</div>
+    <div id="bombTimer">BOMB READY IN: <span id="bombTime">40</span>s</div>
+    <div id="ui">
+        <div>SCORE <span id="score">0</span></div>
+        <div>LIVES <span id="lives">20</span></div>
+        <div>LEVEL <span id="level">1</span></div>
+    </div>
+    <div id="controls">
+        <button id="laserBtn">LASER</button>
+        <button id="bombBtn">BOMB</button>
+    </div>
+    <div id="instructions">Move your device or mouse to control the spaceship</div>
+    
+    <div id="playPauseBtn">▶</div>
+    
+    <div class="pause-overlay" id="pauseOverlay">
+        <h2>GAME PAUSED</h2>
+    </div>  
+    
+    <div id="gameOver">
+        <h2>GAME OVER</h2>
+        <p>Your score: <span id="finalScore">0</span></p>
+        <button id="restartBtn">PLAY AGAIN</button>
+    </div>
+    <div id="miniPauseBtn" title="Pause/Play">❚❚</div>
+</div>
+
+<script>
+/* ---------- CONFIG ---------- */
+let score = 0, lives = 20, level = 1; // Increased lives
+let playerX = 0, playerW = 70;
+let enemies = [], bullets = [], ebullets = [];
+let fireInterval = null, spawnInterval, shootInterval;
+let laserCooldown = false;
+let gameActive = true;
+let laserCharge = 0;
+let bombAvailable = true;
+let bombTimer = null;
+let bombCooldown = 40; // 40 seconds
+let gamePaused = false;
+// Add lerp for smooth spaceship movement
+let targetPlayerX = null;
+let smoothPlayerX = null;
+const LERP_FACTOR = 0.22; // 0.0 = no movement, 1.0 = instant
+let laserTimer = null;
+
+// Cap bullets and particles for performance
+const MAX_BULLETS = 50;
+const MAX_PARTICLES = 60;
+
+/* ---------- UTILS ---------- */
+const $ = id => document.getElementById(id);
+const clamp = (v, min, max) => Math.min(Math.max(v, min), max);
+const rand = (min, max) => Math.random() * (max - min) + min;
+
+/* Create particles for visual effects */
+function createParticles(x, y, color, count) {
+    // Cap total particles on screen
+    const currentParticles = document.querySelectorAll('.particle').length;
+    if (currentParticles >= MAX_PARTICLES) return;
+    count = Math.min(count, 18, MAX_PARTICLES - currentParticles); // Cap for performance
+    for (let i = 0; i < count; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        p.style.left = x + 'px';
+        p.style.top = y + 'px';
+        p.style.width = rand(2, 6) + 'px';
+        p.style.height = p.style.width;
+        p.style.background = color;
+        p.style.boxShadow = `0 0 5px ${color}`;
+        $('game').appendChild(p);
+        setTimeout(() => p.remove(), 1000);
+    }
+}
+
+function createShockwave(x, y, w, h) {
+    const shockwave = document.createElement('div');
+    shockwave.className = 'shockwave';
+    shockwave.style.left = (x - w/2) + 'px';
+    shockwave.style.top = y + 'px';
+    shockwave.style.width = w + 'px';
+    shockwave.style.height = h + 'px';
+    $('game').appendChild(shockwave);
+    setTimeout(() => shockwave.remove(), 1000);
+}
+
+/* ---------- LOADING ---------- */
+let loadW = 0;
+const load = setInterval(() => {
+    loadW += 5;
+    $('bar').firstElementChild.style.width = loadW + '%';
+    if (loadW >= 100) {
+        clearInterval(load);
+        $('loading').style.display = 'none';
+        // Do not start game or show game yet; home page will handle it
+    }
+}, 60);
+
+/* ---------- START ---------- */
+function startGame() {
+    playerW = $('player').offsetWidth;
+    playerX = window.innerWidth / 2; // playerX is now the center
+    $('player').style.left = '50%';
+    $('player').style.transform = 'translateX(-50%)';
+    // More aggressive scaling for difficulty
+    spawnInterval = setInterval(spawnEnemy, Math.max(400, 1400 - (level * 120)));
+    shootInterval = setInterval(enemyShoot, Math.max(500, 1800 - (level * 100)));
+    $('miniPauseBtn').addEventListener('click', function() {
+        $('playPauseBtn').click();
+    });
+    $('miniPauseBtn').textContent = '❚❚';
+    startFiring();
+    $('laserBtn').addEventListener('click', laserShot);
+    $('bombBtn').addEventListener('click', activateBomb);
+    $('restartBtn').addEventListener('click', () => location.reload());
+    $('playPauseBtn').addEventListener('click', togglePause);
+    updateBombButton();
+    // Laser ready every 5 seconds
+    laserCharge = 100;
+    updateLaserButton();
+    if (laserTimer) clearInterval(laserTimer);
+    laserTimer = setInterval(() => {
+        laserCharge = 100;
+        updateLaserButton();
+    }, 5000);
+    loop();
+}
+
+/* ---------- PLAYER MOVE ---------- */
+window.addEventListener('touchmove', e => {
+    if (e.touches[0] && gameActive && !gamePaused) {
+        targetPlayerX = e.touches[0].clientX;
+    }
+});
+window.addEventListener('mousemove', e => {
+    if (gameActive && !gamePaused) {
+        targetPlayerX = e.clientX;
+    }
+});
+function movePlayer(x) {
+    // Clamp so the center stays within the screen
+    playerX = clamp(x, playerW / 2, window.innerWidth - playerW / 2);
+    $('player').style.left = playerX + 'px';
+}
+
+/* ---------- FIRE (5-line spread) ---------- */
+function startFiring() {
+    if (fireInterval || !gameActive || gamePaused) return;
+    $('player').classList.add('firing');
+    shootBullet(); // Fire immediately on press
+    // Firing speed increases with level (minimum 30ms, more aggressive)
+    const fireDelay = Math.max(30, 120 - level * 10);
+    fireInterval = setInterval(shootBullet, fireDelay);
+}
+
+function stopFiring() {
+    clearInterval(fireInterval);
+    fireInterval = null;
+    $('player').classList.remove('firing');
+}
+
+function shootBullet() {
+    if (!gameActive || gamePaused) return;
+    if (bullets.length >= MAX_BULLETS) return;
+    const numBullets = Math.min(1 + Math.floor(level / 2), 13);
+    const spread = 50 + Math.max(0, (numBullets - 1) * 12);
+    const centerX = playerX; // playerX is now the center
+    const centerY = window.innerHeight * 0.88;
+    for (let i = 0; i < numBullets; i++) {
+        if (numBullets === 1 || i % 2 === 0) {
+            if (bullets.length >= MAX_BULLETS) break;
+            let angle = 0;
+            if (numBullets > 1) {
+                angle = -spread/2 + (spread/(numBullets-1))*i;
+            }
+            const rad = angle * (Math.PI / 180);
+            const dx = Math.sin(rad) * 3;
+            const dy = -Math.cos(rad) * 10;
+            const b = document.createElement('div');
+            b.className = 'bullet';
+            b.style.left = (centerX - 3) + 'px';
+            b.style.bottom = '12%';
+            $('game').appendChild(b);
+            bullets.push({ 
+                el: b, 
+                x: centerX, 
+                y: centerY, 
+                dx: dx,
+                dy: dy
+            });
+        }
+    }
+    createParticles(centerX, centerY, '#00f5ff', 15);
+    laserCharge = Math.min(100, laserCharge + 2);
+    updateLaserButton();
+}
+
+/* ---------- LASER (special attack) ---------- */
+function updateLaserButton() {
+    if (laserCharge >= 100) {
+        $('laserBtn').classList.add('ready');
+        $('laserBtn').textContent = 'LASER READY!';
+    } else {
+        $('laserBtn').classList.remove('ready');
+        $('laserBtn').textContent = `LASER (${laserCharge}%)`;
+    }
+}
+
+function laserShot() {
+    if (laserCharge < 100 || !gameActive || gamePaused) return;
+    
+    // Reset charge
+    laserCharge = 0;
+    updateLaserButton();
+    
+    // Create the laser beam
+    const laserBeam = document.createElement('div');
+    laserBeam.className = 'big-laser';
+    laserBeam.style.left = (playerX + playerW/2 - 150) + 'px';
+    laserBeam.style.bottom = '0';
+    $('game').appendChild(laserBeam);
+    
+    // Create shockwaves
+    createShockwave(playerX + playerW/2, window.innerHeight * 0.88, 100, 100);
+    createShockwave(playerX + playerW/2, 0, 200, 200);
+    
+    // Add particles
+    createParticles(playerX + playerW/2, window.innerHeight * 0.88, '#ff006e', 50);
+    
+    // Define laser area
+    const laserLeft = playerX + playerW/2 - 150;
+    const laserRight = laserLeft + 300;
+    
+    // Kill all enemies in the laser beam
+    for (let i = enemies.length - 1; i >= 0; i--) {
+        const e = enemies[i];
+        if (e.x + 35 >= laserLeft && e.x <= laserRight) {
+            explode(e.x + 17.5, e.y + 17.5);
+            e.el.remove();
+            enemies.splice(i, 1);
+            score += 15; // Bonus points for laser kills
+            $('score').textContent = score;
+        }
+    }
+    
+    // Destroy enemy bullets in the laser beam
+    for (let i = ebullets.length - 1; i >= 0; i--) {
+        const b = ebullets[i];
+        if (b.x >= laserLeft && b.x <= laserRight) {
+            b.el.remove();
+            ebullets.splice(i, 1);
+        }
+    }
+    
+    // Remove laser after animation
+    setTimeout(() => laserBeam.remove(), 500);
+}
+
+/* ---------- BOMB (special attack) ---------- */
+function updateBombButton() {
+    if (bombAvailable) {
+        $('bombBtn').classList.add('ready');
+        $('bombBtn').textContent = 'BOMB READY!';
+        $('bombTimer').style.display = 'none';
+    } else {
+        $('bombBtn').classList.remove('ready');
+        $('bombBtn').textContent = 'BOMB';
+    }
+}
+
+function activateBomb() {
+    if (!bombAvailable || !gameActive || gamePaused) return;
+    
+    // Use bomb
+    bombAvailable = false;
+    updateBombButton();
+    
+    // Show bomb effect
+    $('bombEffect').style.display = 'block';
+    setTimeout(() => {
+        $('bombEffect').style.display = 'none';
+    }, 1000);
+    
+    // Create bomb animation
+    const bombCenter = document.createElement('div');
+    bombCenter.className = 'bomb-explosion';
+    bombCenter.style.left = (window.innerWidth/2 - 50) + 'px';
+    bombCenter.style.top = (window.innerHeight/2 - 50) + 'px';
+    $('game').appendChild(bombCenter);
+    
+    for (let i = 0; i < 8; i++) {
+        setTimeout(() => {
+            const pulse = document.createElement('div');
+            pulse.className = 'bomb-pulse';
+            pulse.style.left = (window.innerWidth/2) + 'px';
+            pulse.style.top = (window.innerHeight/2) + 'px';
+            $('game').appendChild(pulse);
+            setTimeout(() => pulse.remove(), 500);
+        }, i * 100);
+    }
+    
+    // Kill all enemies
+    for (let i = enemies.length - 1; i >= 0; i--) {
+        const e = enemies[i];
+        explode(e.x + 17.5, e.y + 17.5);
+        e.el.remove();
+        enemies.splice(i, 1);
+        score += 10;
+        $('score').textContent = score;
+    }
+    
+    // Destroy all enemy bullets
+    for (let i = ebullets.length - 1; i >= 0; i--) {
+        const b = ebullets[i];
+        b.el.remove();
+        ebullets.splice(i, 1);
+    }
+    
+    // Start bomb cooldown
+    let timeLeft = bombCooldown;
+    $('bombTimer').style.display = 'block';
+    $('bombTime').textContent = timeLeft;
+    
+    bombTimer = setInterval(() => {
+        timeLeft--;
+        $('bombTime').textContent = timeLeft;
+        
+        if (timeLeft <= 0) {
+            clearInterval(bombTimer);
+            bombAvailable = true;
+            updateBombButton();
+        }
+    }, 1000);
+}
+
+/* ---------- ENEMY ---------- */
+function spawnEnemy() {
+    if (!gameActive || gamePaused) return;
+    // Max enemies increases rapidly with level
+    const maxEnemies = Math.min(10 + Math.floor(level * 1.5), 40);
+    if (enemies.length >= maxEnemies) return;
+    const e = document.createElement('div');
+    e.className = 'enemy';
+    if (level >= 6) e.classList.add('fierce');
+    const x = rand(0, window.innerWidth - 35);
+    e.style.left = x + 'px';
+    e.style.top = '-35px';
+    e.style.display = 'block';
+    e.style.zIndex = 5;
+    // Spin much faster at higher levels
+    const spinSpeed = Math.max(0.3, 1.5 - level * 0.12);
+    e.style.animationDuration = spinSpeed + 's';
+    $('game').appendChild(e);
+    // Enemy speed increases more with level
+    const speed = 1.0 + (level * 0.5);
+    enemies.push({ el: e, x: x, y: -35, dy: speed });
+}
+
+/* ---------- ENEMY SHOOT ---------- */
+function enemyShoot() {
+    if (!gameActive || gamePaused) return;
+    // Enemies shoot much more often as level increases
+    const shootChance = Math.min(0.25 + level * 0.09, 0.98);
+    enemies.forEach(en => {
+        if (en.y < 0) return;
+        const rect = en.el.getBoundingClientRect();
+        if (rect.bottom < 0) return;
+        if (Math.random() < shootChance) {
+            const b = document.createElement('div');
+            b.className = 'ebullet';
+            b.style.left = (en.x + 17.5 - 3) + 'px';
+            b.style.top = rect.bottom + 'px';
+            $('game').appendChild(b);
+            // Enemy bullet speed increases more with level
+            const bulletSpeed = 4 + level * 1.1;
+            ebullets.push({ el: b, x: en.x + 17.5, y: rect.bottom, dy: bulletSpeed });
+            createParticles(en.x + 17.5, rect.bottom, '#ff006e', 5);
+        }
+    });
+}
+
+/* ---------- EXPLOSION ---------- */
+function explode(x, y) {
+    const e = document.createElement('div');
+    e.className = 'explosion';
+    e.style.left = (x - 40) + 'px';
+    e.style.top = (y - 40) + 'px';
+    $('game').appendChild(e);
+    createParticles(x, y, '#ff4500', 15);
+    setTimeout(() => e.remove(), 400);
+}
+
+/* ---------- GAME OVER ---------- */
+function endGame() {
+    gameActive = false;
+    clearInterval(fireInterval);
+    clearInterval(spawnInterval);
+    clearInterval(shootInterval);
+    clearInterval(bombTimer);
+    clearInterval(laserTimer);
+    stopFiring(); // Stop firing on game over
+    $('finalScore').textContent = score;
+    $('gameOver').style.display = 'flex';
+}
+
+/* ---------- PAUSE GAME ---------- */
+function togglePause() {
+    gamePaused = !gamePaused;
+    if (gamePaused) {
+        $('playPauseBtn').textContent = '▶';
+        $('miniPauseBtn').textContent = '▶';
+        $('pauseOverlay').style.display = 'flex';
+        $('player').classList.remove('firing');
+        stopFiring(); // Always stop firing when pausing
+        clearInterval(fireInterval);
+        fireInterval = null;
+        clearInterval(laserTimer);
+    } else {
+        $('playPauseBtn').textContent = '❚❚';
+        $('miniPauseBtn').textContent = '❚❚';
+        $('pauseOverlay').style.display = 'none';
+        startFiring(); // Resume automatic firing when unpausing
+        // Resume laser timer
+        if (laserTimer) clearInterval(laserTimer);
+        laserTimer = setInterval(() => {
+            laserCharge = 100;
+            updateLaserButton();
+        }, 5000);
+        loop(); // Restart the game loop when unpausing
+    }
+}
+
+/* ---------- GAME LOOP ---------- */
+function loop() {
+    if (!gameActive) return;
+    // Smooth spaceship movement with lerp
+    if (targetPlayerX !== null) {
+        if (smoothPlayerX === null) smoothPlayerX = targetPlayerX;
+        smoothPlayerX += (targetPlayerX - smoothPlayerX) * LERP_FACTOR;
+        movePlayer(smoothPlayerX);
+    }
+    // Level progression: increase level every 200 points
+    const prevLevel = level;
+    level = Math.floor(score / 200) + 1;
+    $('level').textContent = level;
+    // If level changed, restart firing interval for new speed
+    if (level !== prevLevel && fireInterval) {
+        stopFiring();
+        startFiring();
+    }
+    
+    /* bullets / lasers */
+    for (let i = bullets.length - 1; i >= 0; i--) {
+        const b = bullets[i];
+        b.x += b.dx;
+        b.y += b.dy;
+        b.el.style.left = (b.x - 3) + 'px';
+        b.el.style.bottom = (window.innerHeight - b.y) + 'px';
+        
+        // Remove if off screen
+        if (b.y < 0 || b.x < 0 || b.x > window.innerWidth) {
+            b.el.remove();
+            bullets.splice(i, 1);
+            continue;
+        }
+        
+        // Check collision with enemies
+        let hit = false;
+        for (let j = enemies.length - 1; j >= 0; j--) {
+            const e = enemies[j];
+            const dx = b.x - (e.x + 17.5);
+            const dy = b.y - (e.y + 17.5);
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            // Easier hit detection with larger collision radius
+            if (distance < 30) {
+                explode(e.x + 17.5, e.y + 17.5);
+                e.el.remove();
+                enemies.splice(j, 1);
+                score += 10;
+                $('score').textContent = score;
+                b.el.remove();
+                bullets.splice(i, 1);
+                hit = true;
+                
+                // Increase laser charge for each hit
+                laserCharge = Math.min(100, laserCharge + 5);
+                updateLaserButton();
+                break;
+            }
+        }
+        if (hit) continue;
+    }
+    
+    /* enemies */
+    for (let i = enemies.length - 1; i >= 0; i--) {
+        const e = enemies[i];
+        // Update position
+        e.y += e.dy;
+        e.el.style.top = e.y + 'px';
+        e.el.style.left = e.x + 'px';
+        // Remove if off screen and decrease lives
+        if (e.y > window.innerHeight) {
+            e.el.remove();
+            enemies.splice(i, 1);
+            lives--;
+            $('lives').textContent = lives;
+            if (lives <= 0) {
+                endGame();
+            }
+        }
+    }
+    
+    /* enemy bullets */
+    for (let i = ebullets.length - 1; i >= 0; i--) {
+        const b = ebullets[i];
+        b.y += b.dy;
+        b.el.style.top = b.y + 'px';
+        
+        const p = $('player').getBoundingClientRect();
+        const playerRect = {
+            left: p.left,
+            right: p.right,
+            top: p.top,
+            bottom: p.bottom
+        };
+        
+        // Check collision with player - larger hitbox for player
+        if (b.x > playerRect.left + 25 && 
+            b.x < playerRect.right - 25 && 
+            b.y > playerRect.top + 25 && 
+            b.y < playerRect.bottom - 25) {
+            
+            explode(playerX + playerW / 2, window.innerHeight * 0.88);
+            b.el.remove();
+            ebullets.splice(i, 1);
+            lives--;
+            $('lives').textContent = lives;
+            
+            if (lives <= 0) {
+                endGame();
+            }
+            continue;
+        }
+        
+        // Remove if off screen
+        if (b.y > window.innerHeight) {
+            b.el.remove();
+            ebullets.splice(i, 1);
+        }
+    }
+    
+    if (!gamePaused) {
+        requestAnimationFrame(loop);
+    }
+}
+
+// --- HOME PAGE LOGIC ---
+let gameStarted = false;
+document.addEventListener('DOMContentLoaded', () => {
+    const home = document.getElementById('homePage');
+    const startBtn = document.getElementById('startGameBtn');
+    home.style.display = 'flex';
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('game').style.display = 'none';
+    startBtn.addEventListener('click', () => {
+        home.style.display = 'none';
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('game').style.display = 'block';
+        if (!gameStarted) {
+            gameStarted = true;
+            startGame();
+        }
+    });
+});
+</script>
+</body>
+</html>
